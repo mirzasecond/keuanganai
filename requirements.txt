@@ -1,0 +1,7 @@
+streamlit
+pandas
+pymongo
+plotly
+pyTelegramBotAPI
+scikit-learn
+flask

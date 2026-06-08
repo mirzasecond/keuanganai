@@ -12,7 +12,7 @@ import os
 # ==========================================
 # 1. PENGATURAN DATABASE & TELEGRAM
 # ==========================================
-TELEGRAM_TOKEN = "8265162710:AAFVE2w689wfhYPgxxCElHYLqciGcHuhxlE"
+TELEGRAM_TOKEN = "8800914708:AAGRUlS6nFe34qkjk5wL2mBsFHJWJWhweYY"
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
 MONGO_URL = "mongodb+srv://mirza:faizy2009%23@cluster0.us2zngx.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"

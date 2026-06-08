@@ -21,31 +21,28 @@ client = pymongo.MongoClient(MONGO_URL)
 koleksi = client["keuangan_db"]["pengeluaran"]
 
 # ==========================================
-# 2. MELATIH OTAK AI (NLP)
+# 2. MELATIH OTAK AI (NLP) - TAMBAHKAN KATA DI SINI
 # ==========================================
-# Hapus angka dari data latihan agar AI fokus ke 'kata'-nya saja
 data_latihan = [
     # Makanan & Jajan
-    ("makan nasi padang", "Makanan"), ("beli nasi goreng", "Makanan"),
-    ("jajan es campur", "Jajan"), ("beli bakso", "Jajan"),
-    ("beli kopi", "Jajan"), ("ngopi", "Jajan"), ("makan malam", "Makanan"),
+    ("makan nasi padang", "Makanan"), ("beli nasi goreng", "Makanan"), ("jajan es campur", "Jajan"), 
+    ("beli bakso", "Jajan"), ("beli kopi", "Jajan"), ("ngopi", "Jajan"), ("makan", "Makanan"),
     
     # Tagihan
-    ("bayar listrik", "Tagihan"), ("beli token pln", "Tagihan"),
-    ("bayar wifi", "Tagihan"), ("bayar kos", "Tagihan"), ("tagihan air", "Tagihan"),
+    ("bayar listrik", "Tagihan"), ("beli token pln", "Tagihan"), ("bayar wifi", "Tagihan"), 
+    ("bayar kos", "Tagihan"), ("tagihan air", "Tagihan"), ("bayar tagihan", "Tagihan"),
     
     # Transportasi
-    ("isi bensin", "Transportasi"), ("ongkos gojek", "Transportasi"),
-    ("naik grab", "Transportasi"), ("parkir", "Transportasi"), ("tambal ban", "Transportasi"),
+    ("isi bensin", "Transportasi"), ("ongkos gojek", "Transportasi"), ("naik grab", "Transportasi"), 
+    ("parkir motor", "Transportasi"), ("tambal ban", "Transportasi"), ("naik angkot", "Transportasi"),
     
-    # Utang & Cicilan
-    ("bayar utang temen", "Utang"), ("ngutang di warung", "Utang"),
-    ("cicilan motor", "Utang"), ("bayar pinjol", "Utang"),
+    # Utang
+    ("bayar utang teman", "Utang"), ("bayar utang temen", "Utang"), ("ngutang di warung", "Utang"), 
+    ("bayar cicilan", "Utang"), ("bayar pinjol", "Utang"), ("utang", "Utang"),
     
     # Pemasukan
-    ("dapat gaji bulan ini", "Pemasukan"), ("hasil jualan", "Pemasukan"),
-    ("pemasukan uang mingguan", "Pemasukan"), ("dikasih uang", "Pemasukan"),
-    ("transferan masuk", "Pemasukan"), ("uang jajan", "Pemasukan")
+    ("dapat gaji", "Pemasukan"), ("hasil jualan", "Pemasukan"), ("dikasih uang", "Pemasukan"), 
+    ("transferan masuk", "Pemasukan"), ("gajian", "Pemasukan"), ("dapat uang", "Pemasukan")
 ]
 
 df = pd.DataFrame(data_latihan, columns=["teks", "kategori"])
@@ -55,52 +52,42 @@ model_nlp.fit(df['teks'], df['kategori'])
 # ==========================================
 # 3. LOGIKA BOT TELEGRAM
 # ==========================================
-
-# Tangkap perintah /start agar tidak masuk database
 @bot.message_handler(commands=['start', 'help'])
 def sambutan(message):
-    bot.reply_to(message, "Halo bosku! Ketik pengeluaran atau pemasukanmu (contoh: 'beli bakso 10000' atau 'pemasukan uang mingguan 300000').")
+    bot.reply_to(message, "Halo bosku! Ketik saja pengeluaranmu, misal: 'bayar utang teman 50000'")
 
-# Tangkap chat biasa untuk dicatat
 @bot.message_handler(func=lambda message: True)
 def proses_chat_masuk(message):
     teks_asli = message.text.lower()
     
-    # Trik: Hilangkan angka dari teks sebelum ditebak AI agar lebih akurat
+    # Pembersihan angka agar AI fokus ke kata kunci
     teks_tanpa_angka = re.sub(r'\d+', '', teks_asli).strip()
-    if teks_tanpa_angka == "":
-        teks_tanpa_angka = teks_asli
-        
     kategori_tebakan = model_nlp.predict([teks_tanpa_angka])[0]
     
-    # Trik: Ambil nominal angkanya saja untuk disimpan di database
+    # Ekstraksi angka untuk nominal
     angka_ditemukan = re.findall(r'\d+', teks_asli)
     nominal = int(angka_ditemukan[0]) if angka_ditemukan else 0
     
-    data_baru = {
+    # Simpan ke Database
+    koleksi.insert_one({
         "tanggal": datetime.now().strftime("%Y-%m-%d"),
         "catatan_asli": message.text,
         "nominal": nominal,
         "kategori_ai": kategori_tebakan
-    }
+    })
     
-    koleksi.insert_one(data_baru)
-    bot.reply_to(message, f"✅ Sukses! Disimpan sebagai kategori: {kategori_tebakan}.")
+    bot.reply_to(message, f"✅ Sukses! Disimpan sebagai: {kategori_tebakan} (Rp {nominal:,})")
 
 # ==========================================
-# 4. SERVER WEB MINI (AGAR GRATIS DI RENDER/RAILWAY)
+# 4. SERVER WEB (AGAR TETAP HIDUP)
 # ==========================================
 app = Flask(__name__)
-
 @app.route('/')
-def home():
-    return "✅ Mesin Bot Telegram Sedang Berjalan Online 24 Jam!"
+def home(): return "Bot Telegram Aktif!"
 
-def run_bot():
-    bot.infinity_polling()
+def run_bot(): bot.infinity_polling()
 
 if __name__ == "__main__":
-    t = threading.Thread(target=run_bot)
-    t.start()
+    threading.Thread(target=run_bot, daemon=True).start()
     port = int(os.environ.get('PORT', 5000))
     app.run(host="0.0.0.0", port=port)

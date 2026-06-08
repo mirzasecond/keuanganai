@@ -1,7 +1,5 @@
-streamlit
-pandas
-pymongo
-plotly
 pyTelegramBotAPI
+pymongo
+pandas
 scikit-learn
 flask

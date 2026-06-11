@@ -82,10 +82,13 @@ def proses_chat_masuk(message):
 # 4. SERVER WEB (AGAR TETAP HIDUP)
 # ==========================================
 app = Flask(__name__)
-@app.route('/')
-def home(): return "Bot Telegram Aktif!"
 
-def run_bot(): bot.infinity_polling()
+@app.route('/')
+def home():
+    return "Bot Telegram Aktif!"
+
+def run_bot():
+    bot.infinity_polling()
 
 if __name__ == "__main__":
     threading.Thread(target=run_bot, daemon=True).start()
